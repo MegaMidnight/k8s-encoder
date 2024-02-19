@@ -1,3 +1,4 @@
+import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Connection
 
 class RabbitMQProducer(private val connection: Connection, private val chunkQueue: SharedChunkQueue) {
@@ -10,23 +11,22 @@ class RabbitMQProducer(private val connection: Connection, private val chunkQueu
             println("Failed to connect to RabbitMQ.")
         }
     }
-
     fun sendChunks() {
-        println("sendChunks called")
         val channel = connection.createChannel()
 
         try {
             while (!chunkQueue.chunkListIsEmpty()) {
-                var chunk: Chunk? = chunkQueue.getNextChunk()
-                while (chunk == null) {
-                    println("No chunk available, retrying...")
-                    Thread.sleep(1000) // Wait for 1 second before retrying
-                    chunk = chunkQueue.getNextChunk()
+                val chunk = chunkQueue.getNextChunk()
+                if (chunk != null) {
+                    val message = chunk.urlLocation
+                    val properties = AMQP.BasicProperties.Builder()
+                        .contentType("text/plain")
+                        .deliveryMode(2)
+                        .headers(mapOf("chunkUrl" to message)) // bug fix possibly for duplicate messages
+                        .build()
+                    channel.basicPublish("", queueName, properties, message.toByteArray())
+                    println(" [v] Sent '$message'")
                 }
-
-                val message = chunk.urlLocation
-                channel.basicPublish("", queueName, null, message.toByteArray())
-                println(" [v] Sent '$message'")
             }
             println("All messages sent successfully.")
         } catch (e: Exception) {
@@ -34,6 +34,7 @@ class RabbitMQProducer(private val connection: Connection, private val chunkQueu
             e.printStackTrace()
         }
     }
+
     fun close() {
         connection.close()
         println("Connection to RabbitMQ closed.")

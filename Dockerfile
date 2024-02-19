@@ -7,9 +7,9 @@ WORKDIR /app
 # Copy the JAR file to the container
 COPY ./build/libs/kotlin-ffmpeg-x265-1.0.0.jar /app/
 
-# Install wget, xz-utils, x265 and libx265-dev
+# Install wget, xz-utils, x265 and libx265-dev and mkvtoolnix
 RUN apt-get update && \
-    apt-get install -y wget xz-utils x265 libx265-dev
+    apt-get install -y wget xz-utils x265 libx265-dev mkvtoolnix
 
 # Download and extract the pre-compiled FFmpeg build
 RUN wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz && \

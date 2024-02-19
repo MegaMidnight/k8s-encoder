@@ -1,0 +1,1 @@
+data class Chunk(val urlLocation: String, val nodeName: String)

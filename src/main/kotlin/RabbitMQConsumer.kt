@@ -11,16 +11,17 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class RabbitMQConsumer(private var connection: Connection, private val config: Config, private val connector: RabbitMQConnector) {
-    fun consumeMessages() {
+    fun consumeChunks() {
         println("Consuming messages called")
         var outputFileName: String?
-        var currentDeliveryTag: Long? = null
+        val currentDeliveryTag: Long? = null
+        val jedis = RedisConnector().connect()
 
         try {
             val channel = connection.createChannel()
-
-            val chunkQueue = System.getenv("CHUNK_QUEUE") ?: ""
-            val ffmpegPath = System.getenv("FFMPEG_PATH") ?: ""
+            channel.basicQos(1) // limit the number of unacknowledged messages on this channel to 1 for duplicate message bug
+            val chunkQueue = System.getenv("CHUNK_QUEUE") ?: throw IllegalArgumentException("CHUNK_QUEUE is not set")
+            val ffmpegPath = System.getenv("FFMPEG_PATH") ?: "/usr/bin/ffmpeg"
             val encoder = FFmpegEncoder(ffmpegPath)
             val ffmpegParameters = listOf(
                 "-max_muxing_queue_size", "1024",
@@ -28,7 +29,7 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                 "-c:v", "libx265",
                 "-pix_fmt", "yuv420p10le",
                 "-profile:v", "main10",
-                "-x265-params", "\"aq-mode=0:repeat-headers=1:no-strong-intra-smoothing=1:bframes=1:b-adapt=0:frame-threads=0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(40000000,50):max-cll=0,0:hdr10=1:chromaloc=2\"",
+                "-x265-params", "aq-mode=0:repeat-headers=1:no-strong-intra-smoothing=1:bframes=1:b-adapt=0:frame-threads=0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(40000000,50):max-cll=0,0:hdr10=1:chromaloc=2",
                 "-crf:v", "30",
                 "-preset:v", "ultrafast",
                 "-map_metadata", "-1",
@@ -38,34 +39,36 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
 
             val deliverCallback: (String, Delivery) -> Unit = { _: String, delivery: Delivery ->
                 try {
-                    println("Message consumed: ${String(delivery.body)}") // Log when a message is consumed
-
-                    // Acknowledge the message as soon as it's consumed
-                    channel.basicAck(delivery.envelope.deliveryTag, false)
-                    println("Message acknowledged: ${String(delivery.body)}") // Log when a message is acknowledged
-
                     val message = String(delivery.body)
-                    println("Processing message: $message") // Log when the processing starts
-                    // get the delivery tag of the message
-                    currentDeliveryTag = delivery.envelope.deliveryTag
+                    val chunkUrl = delivery.properties.headers?.get("chunkUrl") as? String
+                    if (chunkUrl == null) {
+                        println("chunkUrl not found in headers")
+                    }
 
                     val chunk = config.chunks.find { it.urlLocation == message }
-                    println(" chunk.urlLocation == message: ${chunk?.urlLocation} == $message") // Debug print statement
-                    println("Value of chunk: $chunk") // Debug print statement
-                    if (chunk != null) {
-                        val node = config.nodes.find { it.name == chunk.nodeName }
-                        println("Value of node: $node") // Debug print statement
+                    if (chunk == null) {
+                        println("chunk not found for: $message")
+                    }
+
+                    if (!jedis.sismember("chunkUrl", chunkUrl)) {
+                        jedis.sadd("chunkUrl", chunkUrl)
+                        val node = config.nodes.find { it.name == chunk?.nodeName }
                         if (node != null) {
-                            println("Found node: ${node.name}") // Log the node name
                             val inputFileUrl = node.chunk
-                            println("Downloading input file...$inputFileUrl") // Debug print statement
                             val downloadedFile = downloadFile(inputFileUrl)
                             outputFileName = inputFileUrl.substringAfterLast("/").substringBeforeLast(".mkv") + "-encode.mkv"
-                            println("Encoding file...$outputFileName") // Debug print statement
-
-                            encoder.encode(downloadedFile, outputFileName!!, ffmpegParameters)
-                            println("Encoding complete: $outputFileName") // Debug print statement
-                            println("uploading file...$outputFileName") // Debug print statement
+                            println("Encoding file...$outputFileName")
+                            try {
+                                encoder.encode(downloadedFile, outputFileName!!, ffmpegParameters)
+                            } catch (e: Exception) {
+                                println("An error occurred during the encoding process: ${e.message}")
+                                e.printStackTrace()
+                            } finally {
+                                File(downloadedFile).delete()
+                            }
+                            channel.basicAck(delivery.envelope.deliveryTag, true)
+                            println("Message acknowledged: ${String(delivery.body)}")
+                            println("Encoding complete: $outputFileName")
                             encoder.uploadFile(outputFileName!!, "encodes/$outputFileName")
                             Thread.sleep(1000)
                         } else {
@@ -96,7 +99,6 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
             val cancelCallback: (String) -> Unit = { consumerTag ->
                 println("Consumer $consumerTag has been cancelled")
 
-                // Use the stored delivery tag
                 currentDeliveryTag?.let { deliveryTag ->
                     // Reject the message and requeue it
                     channel.basicNack(deliveryTag, false, true)
@@ -130,8 +132,8 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                     throw IOException("Failed to reconnect to RabbitMQ after 57 attempts", e)
                 }
 
-                // After reconnecting, call consumeMessages again to resume consuming messages
-                return consumeMessages()
+                // After reconnecting, resume consuming messages
+                return consumeChunks()
             }
         } catch (e: Exception) {
             println("An error occurred during the processing of the message: ${e.message}")

@@ -10,8 +10,8 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 class FFmpegEncoder(private val ffmpegPath: String) {
-    private val spacesEndpoint = "https://sfo3.digitaloceanspaces.com"
-    private val spacesBucket = "rips"
+    private val spacesEndpoint = System.getenv("SPACES_ENDPOINT") ?: throw IllegalArgumentException("SPACES_ENDPOINT is not set")
+    private val spacesBucket = System.getenv("SPACES_BUCKET") ?: throw IllegalArgumentException("SPACES_BUCKET is not set")
     private val spacesAccessKey = System.getenv("SPACES_ACCESS_KEY")
     private val spacesSecretKey = System.getenv("SPACES_SECRET_KEY")
 
