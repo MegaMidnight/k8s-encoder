@@ -14,7 +14,6 @@ import java.util.concurrent.TimeoutException
 
 class RabbitMQConsumer(private var connection: Connection, private val config: Config, private val connector: RabbitMQConnector) {
     fun consumeChunks() {
-        println("Consuming messages called")
         val autoAck = false
         var outputFileName: String?
         val currentDeliveryTag: Long? = null
@@ -26,19 +25,8 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
             val chunkQueue = System.getenv("CHUNK_QUEUE") ?: throw IllegalArgumentException("CHUNK_QUEUE is not set")
             val ffmpegPath = System.getenv("FFMPEG_PATH") ?: throw IllegalArgumentException("FFMPEG_PATH is not set")
             val encoder = FFmpegEncoder(ffmpegPath)
-            val ffmpegParameters = listOf(
-                "-max_muxing_queue_size", "1024",
-                "-map", "0:0",
-                "-c:v", "libx265",
-                "-pix_fmt", "yuv420p10le",
-                "-profile:v", "main10",
-                "-x265-params", "aq-mode=0:repeat-headers=1:no-strong-intra-smoothing=1:bframes=1:b-adapt=0:frame-threads=0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(40000000,50):max-cll=0,0:hdr10=1:chromaloc=2",
-                "-crf:v", "30",
-                "-preset:v", "ultrafast",
-                "-map_metadata", "-1",
-                "-map_chapters", "0",
-                "-default_mode", "infer_no_subs"
-            )
+            val ffmpegParameters = System.getenv("FFMPEG_PARAMETERS") ?: throw IllegalArgumentException("FFMPEG_PARAMETERS is not set")
+            val ffmpegParamsAsAList = ffmpegParameters.split(" ").toList()
 
             val deliverCallback = fun(_: String, delivery: Delivery) {
                 try {
@@ -60,7 +48,7 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                                 outputFileName = inputFileUrl.substringAfterLast("/").substringBeforeLast(".mkv") + "-encode.mkv"
                                 println("Encoding file...$outputFileName")
                                 try {
-                                    encoder.encode(downloadedFile, outputFileName!!, ffmpegParameters)
+                                    encoder.encode(downloadedFile, outputFileName!!, ffmpegParamsAsAList)
                                 } catch (e: Exception) {
                                     println("An error occurred during the encoding process: ${e.message}")
                                     e.printStackTrace()
@@ -95,7 +83,6 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                 }
             }
 
-
             val cancelCallback: (String) -> Unit = { consumerTag ->
                 println("Consumer $consumerTag has been cancelled")
 
@@ -127,7 +114,6 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                     }
                 }
 
-                // If all reconnection attempts fail, throw an exception
                 if (attempts == 57) {
                     throw IOException("Failed to reconnect to RabbitMQ after 57 attempts", e)
                 }
