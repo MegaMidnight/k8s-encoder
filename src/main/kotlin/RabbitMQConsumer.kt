@@ -45,12 +45,12 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                     val message = String(delivery.body, Charsets.UTF_8)
                     val parts = message.splitToSequence(",")
                         .toList() // This bug was an all-nighter to fix duplicate messages
-                    if (parts.size == 2) { // Fix for duplicate messages
+                    if (parts.size == 2) {
                         val chunkUrl = parts[0]
                         val messageId = parts[1]
                         val chunk = config.chunks.find { it.urlLocation == chunkUrl }
-                        if (chunk != null && !retryRedisOperation { jedis.sismember("messageIds", messageId) } ){
-                            retryRedisOperation { jedis.sadd("messageIds", messageId) }
+                        if (chunk != null && !retryRedisCommand { jedis.sismember("messageIds", messageId) } ){
+                            retryRedisCommand { jedis.sadd("messageIds", messageId) }
                             val node = config.nodes.find { it.name == chunk.nodeName }
                             if (node != null ) {
                                 val inputFileUrl = node.chunk
@@ -69,7 +69,7 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
                                 }
                                 println("Encoding complete: $outputFileName")
                                 encoder.uploadFile(outputFileName!!, "encodes/$outputFileName")
-                                retryRedisOperation { jedis.srem("messageIds", messageId)}
+                                jedis.close()
                                 Thread.sleep(1000)
                             } else {
                                 println("Node not found for chunk: $message")
@@ -142,7 +142,7 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
 
     }
 
-    fun <T> retryRedisOperation(command: () -> T): T {
+    fun <T> retryRedisCommand(command: () -> T): T {
         val maxAttempts = 4
         (1..maxAttempts).forEach { attempt ->
             try {
@@ -179,9 +179,8 @@ class RabbitMQConsumer(private var connection: Connection, private val config: C
             println("Download was interrupted")
         } catch (e: ExecutionException) {
             println("An error occurred during the download: ${e.message}")
-//        } finally {
-//            future.cancel(true)
-//
+        } finally {
+            future.cancel(true)
         }
         return fileName
     }

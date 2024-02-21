@@ -19,7 +19,7 @@ fun main() {
     // Connect and clear the Redis db before consuming messages
     val redis = RedisConnector().connect()
     redis.use { jedis ->
-        consumer.retryRedisOperation { jedis.del("messageIds") }
+        consumer.retryRedisCommand { jedis.del("messageIds") }
     }
     // Off she goes
     consumer.consumeChunks()
