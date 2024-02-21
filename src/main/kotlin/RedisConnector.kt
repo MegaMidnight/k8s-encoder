@@ -1,23 +1,18 @@
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
+import java.net.URI
 
 class RedisConnector {
-    private val redisHost = System.getenv("REDIS_HOST")
-    private val redisPort = System.getenv("REDIS_PORT").toInt()
-    private val redisUsername = System.getenv("REDIS_USERNAME")
-    private val redisPassword = System.getenv("REDIS_PASSWORD")
-
+    private val redisConnectionString = System.getenv("REDIS_CONNECTION_STRING")
     private val pool: JedisPool
 
     init {
         val poolConfig = JedisPoolConfig()
-        pool = JedisPool(poolConfig, redisHost, redisPort, 2000, redisPassword)
+        pool = JedisPool(poolConfig, URI.create(redisConnectionString))
     }
 
     fun connect(): Jedis {
-        return pool.resource.apply {
-            clientSetname(redisUsername)
-        }
+        return pool.resource
     }
 }

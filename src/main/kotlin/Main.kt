@@ -12,8 +12,15 @@ fun main() {
     producer.sendChunks()
     producer.close()
 
+
     // Consume messages from RabbitMQ
     val consumerConnection = connector.connect()
     val consumer = RabbitMQConsumer(consumerConnection, config, connector)
+    // Connect and clear the Redis db before consuming messages
+    val redis = RedisConnector().connect()
+    redis.use { jedis ->
+        consumer.retryRedisOperation { jedis.del("messageIds") }
+    }
+    // Off she goes
     consumer.consumeChunks()
 }
