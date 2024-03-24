@@ -17,13 +17,4 @@ class KubernetesService {
         }
         return nodeCount
     }
-
-    fun getNodes(): List<String?> {
-        val client: ApiClient = Config.defaultClient()
-        Configuration.setDefaultApiClient(client)
-        val k8sApi = CoreV1Api()
-        val nodeList = k8sApi.listNode().execute()
-        return nodeList?.items?.map { it.metadata?.name } ?: emptyList()
-    }
-
 }
