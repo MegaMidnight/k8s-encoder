@@ -27,7 +27,7 @@ class RabbitMQProducer(private val connection: Connection, private val chunkQueu
                         .deliveryMode(2)
                         .correlationId(messageId) // The savior of duplicate messages
                         .build()
-                    channel.basicPublish("", queueName, properties, message.toByteArray(Charsets.UTF_8)) // Publish directly to the queue
+                    channel.basicPublish("", queueName, properties, message.toByteArray(Charsets.UTF_8))
                     println(" [v] Sent '$message'")
                 }
             }

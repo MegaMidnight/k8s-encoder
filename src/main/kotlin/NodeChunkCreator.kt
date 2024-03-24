@@ -1,6 +1,7 @@
 class NodeChunkCreator {
-    private val nodeCount = System.getenv("NODE_COUNT")?.toInt() ?: throw IllegalArgumentException("NODE_COUNT is not set")
-    private val inputFileUrls = System.getenv("INPUT_FILE_URL")?.split(",") ?: throw IllegalArgumentException("INPUT_FILE_URL is not set")
+    private val nodeCount = KubernetesService().getNodeCount()
+    private val inputFileUrls = VideoChunkSplitter().splitFile(System.getenv("INPUT_FILE")
+        ?: throw IllegalArgumentException("INPUT_FILE is not set"), nodeCount)
 
     init {
         if (nodeCount != inputFileUrls.size) {

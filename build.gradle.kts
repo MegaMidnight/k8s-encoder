@@ -21,6 +21,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.22.1")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.22.1")
     implementation("redis.clients:jedis:5.1.0")
+    implementation("io.kubernetes:client-java:20.0.0")
 
 }
 
