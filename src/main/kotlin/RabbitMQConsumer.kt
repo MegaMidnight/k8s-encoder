@@ -1,3 +1,4 @@
+import com.megamidnight.k8sencoder.Config
 import com.rabbitmq.client.AlreadyClosedException
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.Delivery

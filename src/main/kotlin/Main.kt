@@ -1,9 +1,12 @@
+import com.megamidnight.k8sencoder.Config
+import com.megamidnight.k8sencoder.NodeChunkCreator
+
 fun main() {
     val nodeChunkCreator = NodeChunkCreator()
     val nodes = nodeChunkCreator.createNodes()
     val chunks = nodeChunkCreator.createChunks(nodes)
     val chunkQueue = SharedChunkQueue(chunks)
-    val config = Config(nodes, chunks)
+    val config = Config.create(nodes, chunks)
     val connector = RabbitMQConnector()
 
     // Produce messages to RabbitMQ

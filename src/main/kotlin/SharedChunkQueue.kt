@@ -1,4 +1,5 @@
 import java.util.concurrent.ConcurrentLinkedQueue
+import com.megamidnight.k8sencoder.Chunk
 
 class SharedChunkQueue(chunks: List<Chunk>) {
     private val chunkQueue = ConcurrentLinkedQueue(chunks)
