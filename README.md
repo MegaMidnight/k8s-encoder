@@ -106,4 +106,4 @@ The Docker container includes:
 
 ## License
 
-License information not specified. Please contact the project maintainers for licensing details.
+Licenced under the BSD License.
