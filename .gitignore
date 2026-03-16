@@ -42,3 +42,29 @@ bin/
 .DS_Store
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/codeStyles/Project.xml
+
+### LLM tool configs (ignored so contributors can use whichever they prefer) ###
+CLAUDE.md
+.cursor/
+.cursorrules
+.aider*
+.continue/
+.codeium/
+.tabnine/
+.github/copilot-instructions.md
+openai.json
+
+### Environment / secrets ###
+.env
+.env.*
+local.properties
+*.secret
+
+### Logs ###
+*.log
+logs/
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
