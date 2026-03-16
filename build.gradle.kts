@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.3.0"
 }
 
 group = "com.megamidnight"
@@ -11,16 +11,16 @@ repositories {
 
 dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    implementation("com.rabbitmq:amqp-client:5.20.0")
-    implementation(platform("software.amazon.awssdk:bom:2.17.52"))
+    implementation("com.rabbitmq:amqp-client:5.25.0")
+    implementation(platform("software.amazon.awssdk:bom:2.34.0"))
     implementation("software.amazon.awssdk:s3")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
-    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
-    implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.22.1")
-    implementation("redis.clients:jedis:5.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.3")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.3")
+    implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.25.3")
+    implementation("redis.clients:jedis:6.0.0")
 
 }
 
@@ -47,5 +47,5 @@ tasks.jar {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }

@@ -5,10 +5,7 @@ build/
 !**/src/test/**/build/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -40,11 +37,10 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-/.idea/codeStyles/codeStyleConfig.xml
-/.idea/codeStyles/Project.xml
 
 ### LLM tool configs (ignored so contributors can use whichever they prefer) ###
 CLAUDE.md
+.claude/
 .cursor/
 .cursorrules
 .aider*
@@ -53,6 +49,13 @@ CLAUDE.md
 .tabnine/
 .github/copilot-instructions.md
 openai.json
+
+# Other common AI agent tooling
+.gemini/
+.avante/
+.llm/
+.windsurf/
+.augment/
 
 ### Environment / secrets ###
 .env
