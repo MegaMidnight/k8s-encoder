@@ -45,6 +45,7 @@ bin/
 
 ### LLM tool configs (ignored so contributors can use whichever they prefer) ###
 CLAUDE.md
+.claude/
 .cursor/
 .cursorrules
 .aider*
@@ -53,6 +54,13 @@ CLAUDE.md
 .tabnine/
 .github/copilot-instructions.md
 openai.json
+
+# Other common AI agent tooling
+.gemini/
+.avante/
+.llm/
+.windsurf/
+.augment/
 
 ### Environment / secrets ###
 .env
